@@ -1336,4 +1336,56 @@ NSArray<NSString *> *SortedStringsNotIn(NSSet<NSString *> *set, NSSet<NSString *
   }
 }
 
+- (void)testBloomFilterShouldCorrectlyEncodeComplexUnicodeCharacters {
+  using firebase::firestore::testutil::CaptureExistenceFilterMismatches;
+  using firebase::firestore::util::TestingHooks;
+
+  // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
+  // the emulator is improved to include a bloom filter in the existence filter messages that it
+  // sends.
+  XCTSkipIf([FSTIntegrationTestCase isRunningAgainstEmulator],
+            "Skip this test when running against the Firestore emulator because the emulator does "
+            "not include a bloom filter when it sends existence filter messages, making it "
+            "impossible for this test to verify the correctness of the bloom filter.");
+
+  // Set this test to stop when the first failure occurs because some test assertion failures make
+  // the rest of the test not applicable or will even crash.
+  [self setContinueAfterFailure:NO];
+
+  // Firestore does not do any Unicode normalization on the document IDs. Therefore, two document
+  // IDs that are canonically-equivalent (i.e. they visually appear identical) but are represented
+  // by a different sequence of Unicode code points are treated as distinct document IDs.
+  NSArray<NSString*> *testDocIds;
+  {
+    NSMutableArray<NSString*> *testDocIdsAccumulator = [[NSMutableArray alloc] init];
+    [testDocIdsAccumulator addObject:@"DocumentToDelete"];
+    // The next two strings both end with "e" with an accent: the first uses the dedicated Unicode
+    // code point for this character, while the second uses the standard lowercase "e" followed by
+    // the accent combining character.
+    [testDocIdsAccumulator addObject:@"LowercaseEWithAcuteAccent_\u00E9"];
+    [testDocIdsAccumulator addObject:@"LowercaseEWithAcuteAccent_\u0065\u0301"];
+    // The next two strings both end with an "e" with two different accents applied via the
+    // following two combining characters. The combining characters are specified in a different
+    // order and Firestore treats these document IDs as unique, despite the order of the combining
+    // characters being irrelevant.
+    [testDocIdsAccumulator addObject:@"LowercaseEWithMultipleAccents_\u0065\u0301\u0327"];
+    [testDocIdsAccumulator addObject:@"LowercaseEWithMultipleAccents_\u0065\u0327\u0301"];
+    // The next string contains a character outside the BMP (the "basic multilingual plane"); that
+    // is, its code point is greater than 0xFFFF. Since NSString stores text in sequences of 16-bit
+    // code units, using the UTF-16 encoding (according to
+    // https://www.objc.io/issues/9-strings/unicode) it is stored as a surrogate pair, two 16-bit
+    // code units U+D83D and U+DE00, to represent this character. Make sure that its presence is
+    // correctly tested in the bloom filter, which uses UTF-8 encoding.
+    [testDocIdsAccumulator addObject:@"Smiley_\U0001F600"];
+
+    testDocIds = [NSArray arrayWithArray:testDocIdsAccumulator];
+  }
+
+  // Verify assumptions about the equivalence of strings in `testDocIds`.
+  XCTAssertEqualObjects(testDocIds[1].decomposedStringWithCanonicalMapping, testDocIds[2].decomposedStringWithCanonicalMapping);
+  XCTAssertEqualObjects(testDocIds[3].decomposedStringWithCanonicalMapping, testDocIds[4].decomposedStringWithCanonicalMapping);
+  XCTAssertEqual([testDocIds[5] characterAtIndex:7], 0xD83D);
+  XCTAssertEqual([testDocIds[5] characterAtIndex:8], 0xDE00);
+}
+
 @end
