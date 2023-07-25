@@ -20,7 +20,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface FSTTestingHooksExistenceFilterMismatchInfo : NSObject
+
+@end
+
 @interface FSTTestingHooks : NSObject
+
+/**
+ * Captures all existence filter mismatches in the Watch 'Listen' stream that occur during the
+ * execution of the given block.
+ *
+ * @param block The block to execute; during the execution of this block all existence filter
+ * mismatches will be captured.
+ *
+ * @return the captured existence filter mismatches.
+ */
++(NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)captureExistenceFilterMismatchesDuringBlock:(void(^)())block;
 
 @end
 

@@ -16,7 +16,42 @@
 
 #import "Firestore/Example/Tests/Util/FSTTestingHooks.h"
 
+#include <functional>
+#include <memory>
+#include <vector>
+
+#include "Firestore/core/src/util/testing_hooks.h"
+
+#include "Firestore/core/src/api/listener_registration.h"
+#include "Firestore/core/src/util/defer.h"
+#include "Firestore/core/src/util/testing_hooks.h"
+#include "Firestore/core/test/unit/testutil/async_testing.h"
+
+using firebase::firestore::api::ListenerRegistration;
+using firebase::firestore::testutil::AsyncAccumulator;
+using firebase::firestore::util::Defer;
+using firebase::firestore::util::TestingHooks;
+
 @implementation FSTTestingHooks {
+
+}
+
++(NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)captureExistenceFilterMismatchesDuringBlock:(void(^)())block {
+  auto accumulator = AsyncAccumulator<TestingHooks::ExistenceFilterMismatchInfo>::NewInstance();
+
+  TestingHooks& testing_hooks = TestingHooks::GetInstance();
+  std::shared_ptr<ListenerRegistration> registration = testing_hooks.OnExistenceFilterMismatch(accumulator->AsCallback());
+  Defer unregister_callback([registration]() { registration->Remove(); });
+
+  block();
+
+  std::vector<TestingHooks::ExistenceFilterMismatchInfo> mismatches;
+  while (!accumulator->IsEmpty()) {
+    mismatches.push_back(accumulator->Shift());
+  }
+
+  //return mismatches;
+  return @[];
 }
 
 @end
