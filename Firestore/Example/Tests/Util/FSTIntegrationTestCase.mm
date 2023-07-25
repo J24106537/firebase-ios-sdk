@@ -638,6 +638,62 @@ extern "C" NSArray<FIRDocumentReference *> *FIRDocumentReferenceArrayFromQuerySn
   return [documentReferenceAccumulator copy];
 }
 
+extern "C" void FIRAssertQuerySnapshotContains_(FIRQuerySnapshot* snapshot, NSArray<NSString*>* expectedDocumentIds, const char* file, int line) {
+  // Calculate the file name from the given file path.
+  NSString *filePath = [NSString stringWithUTF8String:file];
+  NSRange lastSlashRange = [filePath rangeOfString:@"/" options:NSBackwardsSearch];
+  NSString *fileName;
+  if (NSEqualRanges(lastSlashRange, NSMakeRange(NSNotFound, 0))) {
+    fileName = filePath;
+  } else {
+    fileName = [filePath substringFromIndex:lastSlashRange.location + 1];
+  }
+
+  NSArray<NSString *>* actualDocumentIds = FIRQuerySnapshotGetIDs(snapshot);
+
+  NSMutableArray<NSString*>* missingDocumentIds = [NSMutableArray arrayWithArray:expectedDocumentIds];
+  NSMutableArray<NSString*>* unexpectedDocumentIds = [NSMutableArray arrayWithArray:actualDocumentIds];
+
+  // Find any document IDs that were expected, but missing.
+  for (NSString* actualDocumentId in actualDocumentIds) {
+    NSUInteger index = [missingDocumentIds indexOfObject:actualDocumentId];
+    if (index != NSNotFound) {
+      [missingDocumentIds removeObjectAtIndex:index];
+    }
+  }
+
+  // Find any document IDs that were present, but not expected.
+  for (NSString* expectedDocumentId in expectedDocumentIds) {
+    NSUInteger index = [unexpectedDocumentIds indexOfObject:expectedDocumentId];
+    if (index != NSNotFound) {
+      [unexpectedDocumentIds removeObjectAtIndex:index];
+    }
+  }
+
+  // Return successfully if there were no missing or unexpected documents in the snapshot.
+  if (missingDocumentIds.count == 0 && unexpectedDocumentIds.count == 0) {
+    return; // assertion passed
+  }
+
+  // Fail if there were one or more missing and/or unpexected documents in the snapshot.
+  [missingDocumentIds sortUsingSelector:@selector(caseInsensitiveCompare:)];
+  [unexpectedDocumentIds sortUsingSelector:@selector(caseInsensitiveCompare:)];
+  NSMutableString* message = [[NSMutableString alloc] init];
+  [message appendFormat:@"%@:%lu", fileName, (unsigned long)line];
+  [message appendFormat:@" The FIRQuerySnapshot contained %lu documents (expected %lu):",
+    (unsigned long)actualDocumentIds.count, (unsigned long)expectedDocumentIds.count];
+  [message appendFormat:@" %lu unexpected and %lu missing",
+    (unsigned long)unexpectedDocumentIds.count, (unsigned long)missingDocumentIds.count];
+  if (unexpectedDocumentIds.count > 0) {
+    [message appendFormat:@"; unexpected documents: [%@]", [unexpectedDocumentIds componentsJoinedByString:@", "]];
+  }
+  if (missingDocumentIds.count > 0) {
+    [message appendFormat:@"; missing documents: [%@]", [missingDocumentIds componentsJoinedByString:@", "]];
+  }
+
+  XCTFail(@"%@", message);
+}
+
 @end
 
 NS_ASSUME_NONNULL_END
