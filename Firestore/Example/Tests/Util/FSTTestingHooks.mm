@@ -61,6 +61,10 @@ using firebase::firestore::util::TestingHooks;
   return [self initWithApplied:bloomFilterInfo.applied hashCount:bloomFilterInfo.hash_count bitmapLength:bloomFilterInfo.bitmap_length padding:bloomFilterInfo.padding];
 }
 
+- (BOOL)mightContain:(FIRDocumentReference*)documentRef {
+  return NO;
+}
+
 @end
 
 #pragma mark - FSTTestingHooksExistenceFilterMismatchInfo extension

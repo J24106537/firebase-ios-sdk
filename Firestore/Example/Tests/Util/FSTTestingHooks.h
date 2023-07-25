@@ -18,6 +18,8 @@
 //       Swift cannot interact with any C++ definitions.
 #import <Foundation/Foundation.h>
 
+@class FIRDocumentReference;
+
 NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - FSTTestingHooksBloomFilter
@@ -44,6 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** The number of bits of padding in the last byte of the bloom filter. */
 @property(nonatomic, readonly) int padding;
+
+/** Returns whether the bloom filter contains the given document. */
+- (BOOL)mightContain:(FIRDocumentReference*)documentRef;
 
 @end // @interface FSTTestingHooksBloomFilter
 
