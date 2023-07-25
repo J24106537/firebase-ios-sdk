@@ -21,6 +21,7 @@
 #import "Firestore/Example/Tests/Util/FSTEventAccumulator.h"
 #import "Firestore/Example/Tests/Util/FSTHelpers.h"
 #import "Firestore/Example/Tests/Util/FSTIntegrationTestCase.h"
+#import "Firestore/Example/Tests/Util/FSTTestingHooks.h"
 
 #include "Firestore/core/test/unit/testutil/testing_hooks_util.h"
 
@@ -1376,12 +1377,64 @@
   // characters.
   NSArray<FIRDocumentReference*>* createdDocuments;
   {
-    FIRQuerySnapshot *querySnapshot = [self readDocumentSetForRef:collRef
+    FIRQuerySnapshot *querySnapshot1 = [self readDocumentSetForRef:collRef
                                                            source:FIRFirestoreSourceDefault];
-    FIRAssertQuerySnapshotContains(querySnapshot, testDocIds);
-    createdDocuments = FIRDocumentReferenceArrayFromQuerySnapshot(querySnapshot);
+    createdDocuments = FIRDocumentReferenceArrayFromQuerySnapshot(querySnapshot1);
+    FIRAssertQuerySnapshotContains(querySnapshot1, testDocIds);
   }
 
+  // Delete one of the documents so that the next call to collection.get() will experience an
+  // existence filter mismatch. Use a different Firestore instance to avoid affecting the local
+  // cache.
+  FIRDocumentReference* documentToDelete = [collRef documentWithPath:@"DocumentToDelete"];
+  {
+    FIRFirestore* db2 = [self firestore];
+    [self deleteDocumentRef:[db2 documentWithPath:documentToDelete.path]];
+  }
+
+  // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+  // existence filter rather than "delete" events when the query is resumed.
+  [NSThread sleepForTimeInterval:10.0f];
+
+  // Resume the query and save the resulting snapshot for verification. Use some internal testing
+  // hooks to "capture" the existence filter mismatches.
+  FIRQuerySnapshot *querySnapshot2;
+  std::vector<TestingHooks::ExistenceFilterMismatchInfo> existence_filter_mismatches =
+      CaptureExistenceFilterMismatches([&] {
+        querySnapshot2 = [self readDocumentSetForRef:collRef source:FIRFirestoreSourceDefault];
+      });
+
+  // Verify that the snapshot from the resumed query contains the expected documents; that is, that
+  // it contains the documents whose names contain complex Unicode characters and _not_ the document
+  // that was deleted.
+  {
+    NSMutableArray<NSString*>* querySnapshot2ExpectedDocumentIds = [NSMutableArray arrayWithArray:testDocIds]; 
+    [querySnapshot2ExpectedDocumentIds removeObject:documentToDelete.documentID];
+    XCTAssertEqual(querySnapshot2ExpectedDocumentIds.count, testDocIds.count - 1);
+    FIRAssertQuerySnapshotContains(querySnapshot2, querySnapshot2ExpectedDocumentIds);
+  }
+
+  // Verify that Watch sent an existence filter with the correct counts.
+  XCTAssertEqual(existence_filter_mismatches.size(), size_t{1},
+                 @"Watch should have sent exactly 1 existence filter");
+  const TestingHooks::ExistenceFilterMismatchInfo &existenceFilterMismatchInfo =
+      existence_filter_mismatches[0];
+  XCTAssertEqual(existenceFilterMismatchInfo.local_cache_count, testDocIds.count);
+  XCTAssertEqual(existenceFilterMismatchInfo.existence_filter_count, testDocIds.count - 1);
+
+  // Verify that Watch sent a valid bloom filter.
+  const absl::optional<TestingHooks::BloomFilterInfo> &bloom_filter =
+      existence_filter_mismatches[0].bloom_filter;
+  XCTAssertTrue(bloom_filter.has_value(),
+                "Watch should have included a bloom filter in the existence filter");
+
+  // The bloom filter application should statistically be successful almost every time; the _only_
+  // time when it would _not_ be successful is if there is a false positive when testing for
+  // 'DocumentToDelete' in the bloom filter. So verify that the bloom filter application is
+  // successful, unless there was a false positive.
+  //TODO: uncomment the lines below and fix compilation errors.
+  //bool is_false_positive = bloom_filter->might_contain(documentToDelete);
+  //XCTAssertEqual(bloom_filter->applied(), !is_false_positive);
 }
 
 @end
