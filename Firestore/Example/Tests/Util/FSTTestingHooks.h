@@ -20,6 +20,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#pragma mark - FSTTestingHooksBloomFilter
+
 /**
  * Information about the bloom filter provided by Watch in the ExistenceFilter message's
  * `unchanged_names` field.
@@ -45,6 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end // @interface FSTTestingHooksBloomFilter
 
+#pragma mark - FSTTestingHooksExistenceFilterMismatchInfo
 
 /**
  * Information about an existence filter mismatch.
@@ -70,11 +73,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+#pragma mark - FSTTestingHooks
+
 /**
  * Manages "testing hooks", hooks into the internals of the SDK to verify internal state and events
  * during integration tests.
  */
 @interface FSTTestingHooks : NSObject
+
+- (instancetype)init __attribute__((unavailable("instances cannot be created")));
 
 /**
  * Captures all existence filter mismatches in the Watch 'Listen' stream that occur during the
