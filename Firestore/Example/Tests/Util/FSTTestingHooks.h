@@ -20,10 +20,60 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ * Information about the bloom filter provided by Watch in the ExistenceFilter message's
+ * `unchanged_names` field.
+ */
+@interface FSTTestingHooksBloomFilter : NSObject
+
+- (instancetype)init __attribute__((unavailable("instances cannot be created directly")));
+
+/**
+ * Whether a full requery was averted by using the bloom filter. If false, then something happened,
+ * such as a false positive, to prevent using the bloom filter to avoid a full requery.
+ */
+@property(nonatomic, readonly) BOOL applied;
+
+/** The number of hash functions used in the bloom filter. */
+@property(nonatomic, readonly) int hashCount;
+
+/** The number of bytes in the bloom filter's bitmask. */
+@property(nonatomic, readonly) int bitmapLength;
+
+/** The number of bits of padding in the last byte of the bloom filter. */
+@property(nonatomic, readonly) int padding;
+
+@end // @interface FSTTestingHooksBloomFilter
+
+
+/**
+ * Information about an existence filter mismatch.
+ */
 @interface FSTTestingHooksExistenceFilterMismatchInfo : NSObject
+
+- (instancetype)init __attribute__((unavailable("instances cannot be created directly")));
+
+/** The number of documents that matched the query in the local cache. */
+@property(nonatomic, readonly) int localCacheCount;
+
+/**
+ * The number of documents that matched the query on the server, as specified in the
+ * `ExistenceFilter` message's `count` field.
+ */
+@property(nonatomic, readonly) int existenceFilterCount;
+
+/**
+ * Information about the bloom filter provided by Watch in the ExistenceFilter message's
+ * `unchanged_names` field. If nil, then that means that Watch did _not_ provide a bloom filter.
+ */
+@property(nonatomic, readonly, nullable) FSTTestingHooksBloomFilter* bloomFilter;
 
 @end
 
+/**
+ * Manages "testing hooks", hooks into the internals of the SDK to verify internal state and events
+ * during integration tests.
+ */
 @interface FSTTestingHooks : NSObject
 
 /**

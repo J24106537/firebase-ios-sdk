@@ -32,9 +32,32 @@ using firebase::firestore::testutil::AsyncAccumulator;
 using firebase::firestore::util::Defer;
 using firebase::firestore::util::TestingHooks;
 
-@implementation FSTTestingHooks {
+// Add private "init" methods to FSTTestingHooksBloomFilter.
+@interface FSTTestingHooksBloomFilter ()
 
-}
+- (instancetype)initWithApplied:(BOOL)applied
+    hashCount:(int)hashCount
+    bitmapLength:(int)bitmapLength
+    padding:(int)padding
+    NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)initWithBloomFilterInfo:(const TestingHooks::BloomFilterInfo&)bloomFilterInfo;
+
+@end
+
+// Add private "init" methods to FSTTestingHooksExistenceFilterMismatchInfo.
+@interface FSTTestingHooksExistenceFilterMismatchInfo ()
+
+- (instancetype)initWithLocalCacheCount:(BOOL)localCacheCount
+    existenceFilterCount:(int)existenceFilterCount
+    bloomFilter:(FSTTestingHooksBloomFilter*)bloomFilter
+    NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)initWithExistenceFilterMismatchInfo:(const TestingHooks::ExistenceFilterMismatchInfo)existenceFilterMismatchInfo;
+
+@end
+
+@implementation FSTTestingHooks
 
 +(NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)captureExistenceFilterMismatchesDuringBlock:(void(^)())block {
   auto accumulator = AsyncAccumulator<TestingHooks::ExistenceFilterMismatchInfo>::NewInstance();
