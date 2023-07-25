@@ -672,23 +672,31 @@ extern "C" void FIRAssertQuerySnapshotContains_(FIRQuerySnapshot* snapshot, NSAr
 
   // Return successfully if there were no missing or unexpected documents in the snapshot.
   if (missingDocumentIds.count == 0 && unexpectedDocumentIds.count == 0) {
-    return; // assertion passed
+    return;
   }
 
-  // Fail if there were one or more missing and/or unpexected documents in the snapshot.
-  [missingDocumentIds sortUsingSelector:@selector(caseInsensitiveCompare:)];
-  [unexpectedDocumentIds sortUsingSelector:@selector(caseInsensitiveCompare:)];
+  // Generate the failure message to communicate the missing and/or unexpected documents.
   NSMutableString* message = [[NSMutableString alloc] init];
-  [message appendFormat:@"%@:%lu", fileName, (unsigned long)line];
-  [message appendFormat:@" The FIRQuerySnapshot contained %lu documents (expected %lu):",
+  [message appendFormat:@"%@:%lu: ", fileName, (unsigned long)line];
+  [message appendFormat:@"The FIRQuerySnapshot contained %lu documents (expected %lu), ",
     (unsigned long)actualDocumentIds.count, (unsigned long)expectedDocumentIds.count];
-  [message appendFormat:@" %lu unexpected and %lu missing",
+  [message appendFormat:@"%lu unexpected and %lu missing; ",
     (unsigned long)unexpectedDocumentIds.count, (unsigned long)missingDocumentIds.count];
+
   if (unexpectedDocumentIds.count > 0) {
-    [message appendFormat:@"; unexpected documents: [%@]", [unexpectedDocumentIds componentsJoinedByString:@", "]];
+    [unexpectedDocumentIds sortUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSString* unexpectedDocumentIdsStr = [unexpectedDocumentIds componentsJoinedByString:@", "];
+    [message appendFormat:@"%lu unexpected: [%@]", (unsigned long)unexpectedDocumentIds.count, unexpectedDocumentIdsStr];
   }
+
+  if (unexpectedDocumentIds.count > 0 && missingDocumentIds.count > 0) {
+    [message appendString:@", "];
+  }
+
   if (missingDocumentIds.count > 0) {
-    [message appendFormat:@"; missing documents: [%@]", [missingDocumentIds componentsJoinedByString:@", "]];
+    [missingDocumentIds sortUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSString* missingDocumentIdsStr = [missingDocumentIds componentsJoinedByString:@", "];
+    [message appendFormat:@"%lu missing: [%@]", (unsigned long)missingDocumentIds.count, missingDocumentIdsStr];
   }
 
   XCTFail(@"%@", message);
