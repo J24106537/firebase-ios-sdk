@@ -1270,7 +1270,7 @@
 
     // Verify that Watch sent an existence filter with the correct counts when the query was
     // resumed.
-    XCTAssertEqual(existenceFilterMismatches.count, 1, @"Watch should have sent exactly 1 existence filter");
+    XCTAssertEqual(existenceFilterMismatches.count, 1u, @"Watch should have sent exactly 1 existence filter");
     FSTTestingHooksExistenceFilterMismatchInfo* existenceFilterMismatchInfo = existenceFilterMismatches[0];
     XCTAssertEqual(existenceFilterMismatchInfo.localCacheCount, 100);
     XCTAssertEqual(existenceFilterMismatchInfo.existenceFilterCount, 50);
@@ -1362,11 +1362,9 @@
 
   // Run a query to populate the local cache with documents that have names with complex Unicode
   // characters.
-  NSArray<FIRDocumentReference*>* createdDocuments;
   {
     FIRQuerySnapshot *querySnapshot1 = [self readDocumentSetForRef:collRef
                                                            source:FIRFirestoreSourceDefault];
-    createdDocuments = FIRDocumentReferenceArrayFromQuerySnapshot(querySnapshot1);
     FIRAssertQuerySnapshotContains(querySnapshot1, testDocIds);
   }
 
@@ -1401,10 +1399,10 @@
   }
 
   // Verify that Watch sent an existence filter with the correct counts.
-  XCTAssertEqual(existenceFilterMismatches.count, 1, @"Watch should have sent exactly 1 existence filter");
+  XCTAssertEqual(existenceFilterMismatches.count, 1u, @"Watch should have sent exactly 1 existence filter");
   FSTTestingHooksExistenceFilterMismatchInfo* existenceFilterMismatchInfo = existenceFilterMismatches[0];
-  XCTAssertEqual(existenceFilterMismatchInfo.localCacheCount, testDocIds.count);
-  XCTAssertEqual(existenceFilterMismatchInfo.existenceFilterCount, testDocIds.count - 1);
+  XCTAssertEqual(existenceFilterMismatchInfo.localCacheCount, (int)testDocIds.count);
+  XCTAssertEqual(existenceFilterMismatchInfo.existenceFilterCount, (int)testDocIds.count - 1);
 
   // Verify that Watch sent a valid bloom filter.
   FSTTestingHooksBloomFilter* bloomFilter = existenceFilterMismatchInfo.bloomFilter;
@@ -1415,8 +1413,8 @@
   // 'DocumentToDelete' in the bloom filter. So verify that the bloom filter application is
   // successful, unless there was a false positive.
   //TODO: uncomment the lines below and fix compilation errors.
-  //bool is_false_positive = bloom_filter->might_contain(documentToDelete);
-  //XCTAssertEqual(bloom_filter->applied(), !is_false_positive);
+  BOOL isFalsePositive = [bloomFilter mightContain:documentToDelete];
+  XCTAssertEqual(bloomFilter.applied, !isFalsePositive);
 }
 
 @end
