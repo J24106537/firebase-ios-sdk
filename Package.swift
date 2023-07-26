@@ -176,6 +176,10 @@ let package = Package(
       url: "https://github.com/SlaunchaMan/GCDWebServer.git",
       revision: "935e2736044e71e5341663c3cc9a335ba6867a2b"
     ),
+    .package(
+      url: "https://github.com/GoogleCloudPlatform/recaptcha-enterprise-mobile-sdk.git",
+      "18.2.0" ..< "18.3.0"
+    ),
   ],
   targets: [
     .target(
@@ -303,8 +307,8 @@ let package = Package(
     ),
     .binaryTarget(
       name: "FirebaseAnalytics",
-      url: "https://dl.google.com/firebase/ios/swiftpm/10.12.0/FirebaseAnalytics.zip",
-      checksum: "46bf2b6cd96fb84aafe80c96087384fd60e4944c970fe2f465d96ffb524ac324"
+      url: "https://dl.google.com/firebase/ios/swiftpm/10.13.0/FirebaseAnalytics.zip",
+      checksum: "0b293db77dc7627661e766daa0d48766ba66bbb8ad9e88a28e90e32cfcf1b54d"
     ),
     .target(
       name: "FirebaseAnalyticsSwiftTarget",
@@ -420,6 +424,7 @@ let package = Package(
         .product(name: "GULAppDelegateSwizzler", package: "GoogleUtilities"),
         .product(name: "GULEnvironment", package: "GoogleUtilities"),
         .product(name: "GTMSessionFetcherCore", package: "gtm-session-fetcher"),
+        .product(name: "RecaptchaInterop", package: "recaptcha-enterprise-mobile-sdk"),
       ],
       path: "FirebaseAuth/Sources",
       publicHeadersPath: "Public",
@@ -1303,7 +1308,7 @@ func googleAppMeasurementDependency() -> Package.Dependency {
     return .package(url: appMeasurementURL, branch: "main")
   }
 
-  return .package(url: appMeasurementURL, exact: "10.12.0")
+  return .package(url: appMeasurementURL, exact: "10.13.0")
 }
 
 func abseilDependency() -> Package.Dependency {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Google
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,27 @@
  * limitations under the License.
  */
 
-#import <TargetConditionals.h>
-#if TARGET_OS_IOS && (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION)
+#import <Foundation/Foundation.h>
 
-#import <UIKit/UIKit.h>
-#import <WebKit/WebKit.h>
+#import "FirebaseAuth/Sources/Backend/FIRAuthRPCResponse.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-/** @class FIRAuthWebView
-    @brief A class reponsible for creating a WKWebView for use within Firebase Auth.
+/** @class FIRVerifyPasswordResponse
+    @brief Represents the response from the getRecaptchaConfig endpoint.
  */
-@interface FIRAuthWebView : UIView
+@interface FIRGetRecaptchaConfigResponse : NSObject <FIRAuthRPCResponse>
 
-/** @property webView
- *  @brief The web view.
+/** @property recaptchaKey
+    @brief The recaptcha key of the project.
  */
-@property(nonatomic, weak) WKWebView *webView;
+@property(nonatomic, copy, nullable) NSString *recaptchaKey;
 
-/** @property spinner
- *  @brief The spinner that indicates web view loading.
+/** @property enforcementState
+    @brief The enforcement state array.
  */
-@property(nonatomic, weak) UIActivityIndicatorView *spinner;
+@property(nonatomic, nullable) NSArray *enforcementState;
 
 @end
 
 NS_ASSUME_NONNULL_END
-
-#endif  // TARGET_OS_IOS && (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION)
