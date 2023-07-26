@@ -1394,7 +1394,6 @@
   {
     NSMutableArray<NSString*>* querySnapshot2ExpectedDocumentIds = [NSMutableArray arrayWithArray:testDocIds]; 
     [querySnapshot2ExpectedDocumentIds removeObject:documentToDelete.documentID];
-    XCTAssertEqual(querySnapshot2ExpectedDocumentIds.count, testDocIds.count - 1);
     FIRAssertQuerySnapshotContains(querySnapshot2, querySnapshot2ExpectedDocumentIds);
   }
 
@@ -1412,9 +1411,13 @@
   // time when it would _not_ be successful is if there is a false positive when testing for
   // 'DocumentToDelete' in the bloom filter. So verify that the bloom filter application is
   // successful, unless there was a false positive.
-  //TODO: uncomment the lines below and fix compilation errors.
   BOOL isFalsePositive = [bloomFilter mightContain:documentToDelete];
   XCTAssertEqual(bloomFilter.applied, !isFalsePositive);
+
+  // Verify that the bloom filter contains the document paths with complex Unicode characters.
+  for (FIRDocumentSnapshot* documentSnapshot in querySnapshot2.documents) {
+    XCTAssertTrue([bloomFilter mightContain:documentSnapshot.reference], @"The bloom filter should contain %@", documentSnapshot.documentID);
+  }
 }
 
 @end
