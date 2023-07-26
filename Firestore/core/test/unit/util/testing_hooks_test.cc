@@ -71,7 +71,7 @@ TestingHooks::ExistenceFilterMismatchInfo SampleExistenceFilterMismatchInfo(int 
   std::string bloom_filter_bytes = "sample_bytes" + std::to_string(seed);
   bool bloom_filter_applied = (seed % 2 == 0);
   int bloom_filter_hash_count = 42 + seed;
-  int bloom_filter_bitmap_length = bloom_filter_bytes.size();
+  int bloom_filter_bitmap_length = static_cast<int>(bloom_filter_bytes.size());
   int bloom_filter_padding = (seed % 8);
 
   return {local_cache_count, existence_filter_count, project_id, database_id, TestingHooks::BloomFilterInfo{ bloom_filter_applied, bloom_filter_hash_count, bloom_filter_bitmap_length, bloom_filter_padding, BloomFilter(ByteString(bloom_filter_bytes), bloom_filter_padding, bloom_filter_hash_count)}};
