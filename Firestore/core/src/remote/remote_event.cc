@@ -258,8 +258,7 @@ void WatchChangeAggregator::HandleExistenceFilter(
       if (current_size != expected_count) {
         // Apply bloom filter to identify and mark removed documents.
         absl::optional<BloomFilter> bloom_filter = ParseBloomFilter(existence_filter);
-        BloomFilterApplicationStatus status = bloom_filter.has_value() ?
-            ApplyBloomFilter(bloom_filter.value(), existence_filter, current_size) : BloomFilterApplicationStatus::kSkipped;
+        BloomFilterApplicationStatus status = bloom_filter.has_value() ? ApplyBloomFilter(bloom_filter.value(), existence_filter, current_size) : BloomFilterApplicationStatus::kSkipped;
         if (status != BloomFilterApplicationStatus::kSuccess) {
           // If bloom filter application fails, we reset the mapping and
           // trigger re-run of the query.
