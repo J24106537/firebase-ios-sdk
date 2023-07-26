@@ -215,22 +215,15 @@ std::vector<TargetId> WatchChangeAggregator::GetTargetIds(
 namespace {
 
 TestingHooks::ExistenceFilterMismatchInfo
-create_existence_filter_mismatch_info_for_testing_hooks(
-    BloomFilterApplicationStatus status,
-    int local_cache_count,
-    const ExistenceFilterWatchChange& existence_filter) {
-  absl::optional<TestingHooks::BloomFilterInfo> bloom_filter;
+create_existence_filter_mismatch_info_for_testing_hooks(int local_cache_count, const ExistenceFilterWatchChange& existence_filter, const DatabaseId& database_id, absl::optional<BloomFilter> bloom_filter, BloomFilterApplicationStatus status) {
+  absl::optional<TestingHooks::BloomFilterInfo> bloom_filter_info;
   if (existence_filter.filter().bloom_filter_parameters().has_value()) {
     const BloomFilterParameters& bloom_filter_parameters =
         existence_filter.filter().bloom_filter_parameters().value();
-    bloom_filter = {status == BloomFilterApplicationStatus::kSuccess,
-                    bloom_filter_parameters.hash_count,
-                    static_cast<int>(bloom_filter_parameters.bitmap.size()),
-                    bloom_filter_parameters.padding};
+    bloom_filter_info = {status == BloomFilterApplicationStatus::kSuccess, bloom_filter_parameters.hash_count, static_cast<int>(bloom_filter_parameters.bitmap.size()), bloom_filter_parameters.padding, std::move(bloom_filter)};
   }
 
-  return {local_cache_count, existence_filter.filter().count(),
-          std::move(bloom_filter)};
+  return {local_cache_count, existence_filter.filter().count(), database_id.project_id(), database_id.database_id(), std::move(bloom_filter_info)};
 }
 
 }  // namespace
@@ -264,8 +257,9 @@ void WatchChangeAggregator::HandleExistenceFilter(
       int current_size = GetCurrentDocumentCountForTarget(target_id);
       if (current_size != expected_count) {
         // Apply bloom filter to identify and mark removed documents.
-        BloomFilterApplicationStatus status =
-            ApplyBloomFilter(existence_filter, current_size);
+        absl::optional<BloomFilter> bloom_filter = ParseBloomFilter(existence_filter);
+        BloomFilterApplicationStatus status = bloom_filter.has_value() ?
+            ApplyBloomFilter(bloom_filter.value(), existence_filter, current_size) : BloomFilterApplicationStatus::kSkipped;
         if (status != BloomFilterApplicationStatus::kSuccess) {
           // If bloom filter application fails, we reset the mapping and
           // trigger re-run of the query.
@@ -277,20 +271,18 @@ void WatchChangeAggregator::HandleExistenceFilter(
           pending_target_resets_.insert({target_id, purpose});
         }
 
-        TestingHooks::GetInstance().NotifyOnExistenceFilterMismatch(
-            create_existence_filter_mismatch_info_for_testing_hooks(
-                status, current_size, existence_filter));
+        TestingHooks::GetInstance().NotifyOnExistenceFilterMismatch(create_existence_filter_mismatch_info_for_testing_hooks(current_size, existence_filter, target_metadata_provider_->GetDatabaseId(), std::move(bloom_filter), status));
       }
     }
   }
 }
 
-BloomFilterApplicationStatus WatchChangeAggregator::ApplyBloomFilter(
-    const ExistenceFilterWatchChange& existence_filter, int current_count) {
+absl::optional<BloomFilter> WatchChangeAggregator::ParseBloomFilter(
+    const ExistenceFilterWatchChange& existence_filter) {
   const absl::optional<BloomFilterParameters>& bloom_filter_parameters =
       existence_filter.filter().bloom_filter_parameters();
   if (!bloom_filter_parameters.has_value()) {
-    return BloomFilterApplicationStatus::kSkipped;
+    return absl::nullopt;
   }
 
   util::StatusOr<BloomFilter> maybe_bloom_filter =
@@ -300,23 +292,25 @@ BloomFilterApplicationStatus WatchChangeAggregator::ApplyBloomFilter(
   if (!maybe_bloom_filter.ok()) {
     LOG_WARN("Creating BloomFilter failed: %s",
              maybe_bloom_filter.status().error_message());
-    return BloomFilterApplicationStatus::kSkipped;
+    return absl::nullopt;
   }
 
   BloomFilter bloom_filter = std::move(maybe_bloom_filter).ValueOrDie();
 
   if (bloom_filter.bit_count() == 0) {
-    return BloomFilterApplicationStatus::kSkipped;
+    return absl::nullopt;
   }
+
+  return bloom_filter;
+}
+
+BloomFilterApplicationStatus WatchChangeAggregator::ApplyBloomFilter(const BloomFilter& bloom_filter, const ExistenceFilterWatchChange& existence_filter, int current_count) {
+  int expected_count = existence_filter.filter().count();
 
   int removed_document_count =
       FilterRemovedDocuments(bloom_filter, existence_filter.target_id());
 
-  int expected_count = existence_filter.filter().count();
-  if (expected_count != (current_count - removed_document_count)) {
-    return BloomFilterApplicationStatus::kFalsePositive;
-  }
-  return BloomFilterApplicationStatus::kSuccess;
+  return (expected_count == (current_count - removed_document_count)) ? BloomFilterApplicationStatus::kSuccess : BloomFilterApplicationStatus::kFalsePositive;
 }
 
 int WatchChangeAggregator::FilterRemovedDocuments(
