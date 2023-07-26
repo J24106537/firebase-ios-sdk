@@ -1221,12 +1221,13 @@
     // local cache.
     NSSet<NSString *> *deletedDocumentIds;
     {
-      FIRFirestore* db2 = [self firestore];
-      FIRWriteBatch* batch = [db2 batch];
+      FIRFirestore *db2 = [self firestore];
+      FIRWriteBatch *batch = [db2 batch];
 
       NSMutableArray<NSString *> *deletedDocumentIdsAccumulator = [[NSMutableArray alloc] init];
       for (decltype(createdDocuments.count) i = 0; i < createdDocuments.count; i += 2) {
-        FIRDocumentReference *documentToDelete = [db2 documentWithPath:createdDocuments[i].path];;
+        FIRDocumentReference *documentToDelete = [db2 documentWithPath:createdDocuments[i].path];
+        ;
         [batch deleteDocument:documentToDelete];
         [deletedDocumentIdsAccumulator addObject:documentToDelete.documentID];
       }
@@ -1252,9 +1253,10 @@
     // Use some internal testing hooks to "capture" the existence filter mismatches to verify that
     // Watch sent a bloom filter, and it was used to avert a full requery.
     __block FIRQuerySnapshot *querySnapshot2;
-    NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>* existenceFilterMismatches = [FSTTestingHooks captureExistenceFilterMismatchesDuringBlock:^{
-      querySnapshot2 = [self readDocumentSetForRef:collRef source:FIRFirestoreSourceDefault];
-    }];
+    NSArray<FSTTestingHooksExistenceFilterMismatchInfo *> *existenceFilterMismatches =
+        [FSTTestingHooks captureExistenceFilterMismatchesDuringBlock:^{
+          querySnapshot2 = [self readDocumentSetForRef:collRef source:FIRFirestoreSourceDefault];
+        }];
 
     // Verify that the snapshot from the resumed query contains the expected documents; that is,
     // that it contains the 50 documents that were _not_ deleted.
@@ -1270,14 +1272,17 @@
 
     // Verify that Watch sent an existence filter with the correct counts when the query was
     // resumed.
-    XCTAssertEqual(existenceFilterMismatches.count, 1u, @"Watch should have sent exactly 1 existence filter");
-    FSTTestingHooksExistenceFilterMismatchInfo* existenceFilterMismatchInfo = existenceFilterMismatches[0];
+    XCTAssertEqual(existenceFilterMismatches.count, 1u,
+                   @"Watch should have sent exactly 1 existence filter");
+    FSTTestingHooksExistenceFilterMismatchInfo *existenceFilterMismatchInfo =
+        existenceFilterMismatches[0];
     XCTAssertEqual(existenceFilterMismatchInfo.localCacheCount, 100);
     XCTAssertEqual(existenceFilterMismatchInfo.existenceFilterCount, 50);
 
     // Verify that Watch sent a valid bloom filter.
-    FSTTestingHooksBloomFilter* bloomFilter = existenceFilterMismatchInfo.bloomFilter;
-    XCTAssertNotNil(bloomFilter, "Watch should have included a bloom filter in the existence filter");
+    FSTTestingHooksBloomFilter *bloomFilter = existenceFilterMismatchInfo.bloomFilter;
+    XCTAssertNotNil(bloomFilter,
+                    "Watch should have included a bloom filter in the existence filter");
     XCTAssertGreaterThan(bloomFilter.hashCount, 0);
     XCTAssertGreaterThan(bloomFilter.bitmapLength, 0);
     XCTAssertGreaterThan(bloomFilter.padding, 0);
@@ -1317,9 +1322,9 @@
   // Firestore does not do any Unicode normalization on the document IDs. Therefore, two document
   // IDs that are canonically-equivalent (i.e. they visually appear identical) but are represented
   // by a different sequence of Unicode code points are treated as distinct document IDs.
-  NSArray<NSString*> *testDocIds;
+  NSArray<NSString *> *testDocIds;
   {
-    NSMutableArray<NSString*> *testDocIdsAccumulator = [[NSMutableArray alloc] init];
+    NSMutableArray<NSString *> *testDocIdsAccumulator = [[NSMutableArray alloc] init];
     [testDocIdsAccumulator addObject:@"DocumentToDelete"];
     // The next two strings both end with "e" with an accent: the first uses the dedicated Unicode
     // code point for this character, while the second uses the standard lowercase "e" followed by
@@ -1344,8 +1349,10 @@
   }
 
   // Verify assumptions about the equivalence of strings in `testDocIds`.
-  XCTAssertEqualObjects(testDocIds[1].decomposedStringWithCanonicalMapping, testDocIds[2].decomposedStringWithCanonicalMapping);
-  XCTAssertEqualObjects(testDocIds[3].decomposedStringWithCanonicalMapping, testDocIds[4].decomposedStringWithCanonicalMapping);
+  XCTAssertEqualObjects(testDocIds[1].decomposedStringWithCanonicalMapping,
+                        testDocIds[2].decomposedStringWithCanonicalMapping);
+  XCTAssertEqualObjects(testDocIds[3].decomposedStringWithCanonicalMapping,
+                        testDocIds[4].decomposedStringWithCanonicalMapping);
   XCTAssertEqual([testDocIds[5] characterAtIndex:7], 0xD83D);
   XCTAssertEqual([testDocIds[5] characterAtIndex:8], 0xDE00);
 
@@ -1353,7 +1360,7 @@
   // `testDocIds`.
   NSMutableDictionary<NSString *, NSDictionary<NSString *, id> *> *testDocs =
       [[NSMutableDictionary alloc] init];
-  for (NSString* testDocId in testDocIds) {
+  for (NSString *testDocId in testDocIds) {
     [testDocs setValue:@{@"foo" : @42} forKey:testDocId];
   }
 
@@ -1364,16 +1371,16 @@
   // characters.
   {
     FIRQuerySnapshot *querySnapshot1 = [self readDocumentSetForRef:collRef
-                                                           source:FIRFirestoreSourceDefault];
+                                                            source:FIRFirestoreSourceDefault];
     FIRAssertQuerySnapshotContains(querySnapshot1, testDocIds);
   }
 
   // Delete one of the documents so that the next call to collection.get() will experience an
   // existence filter mismatch. Use a different Firestore instance to avoid affecting the local
   // cache.
-  FIRDocumentReference* documentToDelete = [collRef documentWithPath:@"DocumentToDelete"];
+  FIRDocumentReference *documentToDelete = [collRef documentWithPath:@"DocumentToDelete"];
   {
-    FIRFirestore* db2 = [self firestore];
+    FIRFirestore *db2 = [self firestore];
     [self deleteDocumentRef:[db2 documentWithPath:documentToDelete.path]];
   }
 
@@ -1384,27 +1391,31 @@
   // Resume the query and save the resulting snapshot for verification. Use some internal testing
   // hooks to "capture" the existence filter mismatches.
   __block FIRQuerySnapshot *querySnapshot2;
-  NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>* existenceFilterMismatches = [FSTTestingHooks captureExistenceFilterMismatchesDuringBlock:^{
-    querySnapshot2 = [self readDocumentSetForRef:collRef source:FIRFirestoreSourceDefault];
-  }];
+  NSArray<FSTTestingHooksExistenceFilterMismatchInfo *> *existenceFilterMismatches =
+      [FSTTestingHooks captureExistenceFilterMismatchesDuringBlock:^{
+        querySnapshot2 = [self readDocumentSetForRef:collRef source:FIRFirestoreSourceDefault];
+      }];
 
   // Verify that the snapshot from the resumed query contains the expected documents; that is, that
   // it contains the documents whose names contain complex Unicode characters and _not_ the document
   // that was deleted.
   {
-    NSMutableArray<NSString*>* querySnapshot2ExpectedDocumentIds = [NSMutableArray arrayWithArray:testDocIds]; 
+    NSMutableArray<NSString *> *querySnapshot2ExpectedDocumentIds =
+        [NSMutableArray arrayWithArray:testDocIds];
     [querySnapshot2ExpectedDocumentIds removeObject:documentToDelete.documentID];
     FIRAssertQuerySnapshotContains(querySnapshot2, querySnapshot2ExpectedDocumentIds);
   }
 
   // Verify that Watch sent an existence filter with the correct counts.
-  XCTAssertEqual(existenceFilterMismatches.count, 1u, @"Watch should have sent exactly 1 existence filter");
-  FSTTestingHooksExistenceFilterMismatchInfo* existenceFilterMismatchInfo = existenceFilterMismatches[0];
+  XCTAssertEqual(existenceFilterMismatches.count, 1u,
+                 @"Watch should have sent exactly 1 existence filter");
+  FSTTestingHooksExistenceFilterMismatchInfo *existenceFilterMismatchInfo =
+      existenceFilterMismatches[0];
   XCTAssertEqual(existenceFilterMismatchInfo.localCacheCount, (int)testDocIds.count);
   XCTAssertEqual(existenceFilterMismatchInfo.existenceFilterCount, (int)testDocIds.count - 1);
 
   // Verify that Watch sent a valid bloom filter.
-  FSTTestingHooksBloomFilter* bloomFilter = existenceFilterMismatchInfo.bloomFilter;
+  FSTTestingHooksBloomFilter *bloomFilter = existenceFilterMismatchInfo.bloomFilter;
   XCTAssertNotNil(bloomFilter, "Watch should have included a bloom filter in the existence filter");
 
   // The bloom filter application should statistically be successful almost every time; the _only_
@@ -1415,8 +1426,9 @@
   XCTAssertEqual(bloomFilter.applied, !isFalsePositive);
 
   // Verify that the bloom filter contains the document paths with complex Unicode characters.
-  for (FIRDocumentSnapshot* documentSnapshot in querySnapshot2.documents) {
-    XCTAssertTrue([bloomFilter mightContain:documentSnapshot.reference], @"The bloom filter should contain %@", documentSnapshot.documentID);
+  for (FIRDocumentSnapshot *documentSnapshot in querySnapshot2.documents) {
+    XCTAssertTrue([bloomFilter mightContain:documentSnapshot.reference],
+                  @"The bloom filter should contain %@", documentSnapshot.documentID);
   }
 }
 

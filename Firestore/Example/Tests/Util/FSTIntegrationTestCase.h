@@ -149,7 +149,10 @@ NSArray<FIRDocumentReference *> *FIRDocumentReferenceArrayFromQuerySnapshot(FIRQ
 #define FIRAssertQuerySnapshotContains(snapshot, expectedDocumentIds) \
   FIRAssertQuerySnapshotContains_(snapshot, expectedDocumentIds, __FILE__, __LINE__);
 
-void FIRAssertQuerySnapshotContains_(FIRQuerySnapshot* snapshot, NSArray<NSString*>* expectedDocumentIds, const char* file, int line);
+void FIRAssertQuerySnapshotContains_(FIRQuerySnapshot *snapshot,
+                                     NSArray<NSString *> *expectedDocumentIds,
+                                     const char *file,
+                                     int line);
 
 #if __cplusplus
 }  // extern "C"

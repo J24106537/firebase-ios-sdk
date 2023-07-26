@@ -44,9 +44,17 @@ using firebase::firestore::util::TestingHooks;
 // Add private "init" methods to FSTTestingHooksBloomFilter.
 @interface FSTTestingHooksBloomFilter ()
 
-- (instancetype)initWithApplied:(BOOL)applied hashCount:(int)hashCount bitmapLength:(int)bitmapLength padding:(int)padding projectId:(std::string)projectId databaseId:(std::string)databaseId bloomFilter:(absl::optional<BloomFilter>)bloomFilter NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithApplied:(BOOL)applied
+                      hashCount:(int)hashCount
+                   bitmapLength:(int)bitmapLength
+                        padding:(int)padding
+                      projectId:(std::string)projectId
+                     databaseId:(std::string)databaseId
+                    bloomFilter:(absl::optional<BloomFilter>)bloomFilter NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithBloomFilterInfo:(const TestingHooks::BloomFilterInfo&)bloomFilterInfo projectId:(std::string)projectId databaseId:(std::string)databaseId;
+- (instancetype)initWithBloomFilterInfo:(const TestingHooks::BloomFilterInfo&)bloomFilterInfo
+                              projectId:(std::string)projectId
+                             databaseId:(std::string)databaseId;
 
 @end
 
@@ -58,7 +66,13 @@ using firebase::firestore::util::TestingHooks;
   absl::optional<BloomFilter> _bloomFilter;
 }
 
-- (instancetype)initWithApplied:(BOOL)applied hashCount:(int)hashCount bitmapLength:(int)bitmapLength padding:(int)padding projectId:(std::string)projectId databaseId:(std::string)databaseId bloomFilter:(absl::optional<BloomFilter>)bloomFilter {
+- (instancetype)initWithApplied:(BOOL)applied
+                      hashCount:(int)hashCount
+                   bitmapLength:(int)bitmapLength
+                        padding:(int)padding
+                      projectId:(std::string)projectId
+                     databaseId:(std::string)databaseId
+                    bloomFilter:(absl::optional<BloomFilter>)bloomFilter {
   if (self = [super init]) {
     _applied = applied;
     _hashCount = hashCount;
@@ -71,15 +85,24 @@ using firebase::firestore::util::TestingHooks;
   return self;
 }
 
-- (instancetype)initWithBloomFilterInfo:(const TestingHooks::BloomFilterInfo&)bloomFilterInfo projectId:(std::string)projectId databaseId:(std::string)databaseId {
-  return [self initWithApplied:bloomFilterInfo.applied hashCount:bloomFilterInfo.hash_count bitmapLength:bloomFilterInfo.bitmap_length padding:bloomFilterInfo.padding projectId:std::move(projectId) databaseId:std::move(databaseId) bloomFilter:bloomFilterInfo.bloom_filter];
+- (instancetype)initWithBloomFilterInfo:(const TestingHooks::BloomFilterInfo&)bloomFilterInfo
+                              projectId:(std::string)projectId
+                             databaseId:(std::string)databaseId {
+  return [self initWithApplied:bloomFilterInfo.applied
+                     hashCount:bloomFilterInfo.hash_count
+                  bitmapLength:bloomFilterInfo.bitmap_length
+                       padding:bloomFilterInfo.padding
+                     projectId:std::move(projectId)
+                    databaseId:std::move(databaseId)
+                   bloomFilter:bloomFilterInfo.bloom_filter];
 }
 
 - (BOOL)mightContain:(FIRDocumentReference*)documentRef {
   if (!_bloomFilter.has_value()) {
     return NO;
   }
-  std::string document_path = StringFormat("projects/%s/databases/%s/documents/%s", _projectId, _databaseId, MakeStringView(documentRef.path));
+  std::string document_path = StringFormat("projects/%s/databases/%s/documents/%s", _projectId,
+                                           _databaseId, MakeStringView(documentRef.path));
   return _bloomFilter->MightContain(document_path);
 }
 
@@ -90,9 +113,13 @@ using firebase::firestore::util::TestingHooks;
 // Add private "init" methods to FSTTestingHooksExistenceFilterMismatchInfo.
 @interface FSTTestingHooksExistenceFilterMismatchInfo ()
 
-- (instancetype)initWithLocalCacheCount:(int)localCacheCount existenceFilterCount:(int)existenceFilterCount bloomFilter:(nullable FSTTestingHooksBloomFilter*)bloomFilter NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithLocalCacheCount:(int)localCacheCount
+                   existenceFilterCount:(int)existenceFilterCount
+                            bloomFilter:(nullable FSTTestingHooksBloomFilter*)bloomFilter
+    NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithExistenceFilterMismatchInfo:(const TestingHooks::ExistenceFilterMismatchInfo&)existenceFilterMismatchInfo;
+- (instancetype)initWithExistenceFilterMismatchInfo:
+    (const TestingHooks::ExistenceFilterMismatchInfo&)existenceFilterMismatchInfo;
 
 @end
 
@@ -100,7 +127,9 @@ using firebase::firestore::util::TestingHooks;
 
 @implementation FSTTestingHooksExistenceFilterMismatchInfo
 
-- (instancetype)initWithLocalCacheCount:(int)localCacheCount existenceFilterCount:(int)existenceFilterCount bloomFilter:(nullable FSTTestingHooksBloomFilter*)bloomFilter {
+- (instancetype)initWithLocalCacheCount:(int)localCacheCount
+                   existenceFilterCount:(int)existenceFilterCount
+                            bloomFilter:(nullable FSTTestingHooksBloomFilter*)bloomFilter {
   if (self = [super init]) {
     _localCacheCount = localCacheCount;
     _existenceFilterCount = existenceFilterCount;
@@ -109,17 +138,21 @@ using firebase::firestore::util::TestingHooks;
   return self;
 }
 
-- (instancetype)initWithExistenceFilterMismatchInfo:(const TestingHooks::ExistenceFilterMismatchInfo&)existenceFilterMismatchInfo {
+- (instancetype)initWithExistenceFilterMismatchInfo:
+    (const TestingHooks::ExistenceFilterMismatchInfo&)existenceFilterMismatchInfo {
   FSTTestingHooksBloomFilter* bloomFilter;
   if (existenceFilterMismatchInfo.bloom_filter.has_value()) {
-    bloomFilter = [[FSTTestingHooksBloomFilter alloc] initWithBloomFilterInfo:existenceFilterMismatchInfo.bloom_filter.value() projectId:existenceFilterMismatchInfo.project_id databaseId:existenceFilterMismatchInfo.database_id];
+    bloomFilter = [[FSTTestingHooksBloomFilter alloc]
+        initWithBloomFilterInfo:existenceFilterMismatchInfo.bloom_filter.value()
+                      projectId:existenceFilterMismatchInfo.project_id
+                     databaseId:existenceFilterMismatchInfo.database_id];
   } else {
     bloomFilter = nil;
   }
 
   return [self initWithLocalCacheCount:existenceFilterMismatchInfo.local_cache_count
-  existenceFilterCount:existenceFilterMismatchInfo.existence_filter_count
-  bloomFilter:bloomFilter];
+                  existenceFilterCount:existenceFilterMismatchInfo.existence_filter_count
+                           bloomFilter:bloomFilter];
 }
 
 @end
@@ -128,18 +161,22 @@ using firebase::firestore::util::TestingHooks;
 
 @implementation FSTTestingHooks
 
-+(NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)captureExistenceFilterMismatchesDuringBlock:(void(^)())block {
++ (NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)
+    captureExistenceFilterMismatchesDuringBlock:(void (^)())block {
   auto accumulator = AsyncAccumulator<TestingHooks::ExistenceFilterMismatchInfo>::NewInstance();
 
   TestingHooks& testing_hooks = TestingHooks::GetInstance();
-  std::shared_ptr<ListenerRegistration> registration = testing_hooks.OnExistenceFilterMismatch(accumulator->AsCallback());
+  std::shared_ptr<ListenerRegistration> registration =
+      testing_hooks.OnExistenceFilterMismatch(accumulator->AsCallback());
   Defer unregister_callback([registration]() { registration->Remove(); });
 
   block();
 
-  NSMutableArray<FSTTestingHooksExistenceFilterMismatchInfo*>* mismatches = [[NSMutableArray alloc] init];
+  NSMutableArray<FSTTestingHooksExistenceFilterMismatchInfo*>* mismatches =
+      [[NSMutableArray alloc] init];
   while (!accumulator->IsEmpty()) {
-    [mismatches addObject:[[FSTTestingHooksExistenceFilterMismatchInfo alloc] initWithExistenceFilterMismatchInfo:accumulator->Shift()]];
+    [mismatches addObject:[[FSTTestingHooksExistenceFilterMismatchInfo alloc]
+                              initWithExistenceFilterMismatchInfo:accumulator->Shift()]];
   }
 
   return mismatches;

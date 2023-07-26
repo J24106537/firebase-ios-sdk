@@ -50,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 /** Returns whether the bloom filter contains the given document. */
 - (BOOL)mightContain:(FIRDocumentReference*)documentRef;
 
-@end // @interface FSTTestingHooksBloomFilter
+@end  // @interface FSTTestingHooksBloomFilter
 
 #pragma mark - FSTTestingHooksExistenceFilterMismatchInfo
 
@@ -97,7 +97,8 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * @return the captured existence filter mismatches.
  */
-+(NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)captureExistenceFilterMismatchesDuringBlock:(void(^)())block;
++ (NSArray<FSTTestingHooksExistenceFilterMismatchInfo*>*)
+    captureExistenceFilterMismatchesDuringBlock:(void (^)())block;
 
 @end
 

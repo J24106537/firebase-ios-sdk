@@ -215,15 +215,26 @@ std::vector<TargetId> WatchChangeAggregator::GetTargetIds(
 namespace {
 
 TestingHooks::ExistenceFilterMismatchInfo
-create_existence_filter_mismatch_info_for_testing_hooks(int local_cache_count, const ExistenceFilterWatchChange& existence_filter, const DatabaseId& database_id, absl::optional<BloomFilter> bloom_filter, BloomFilterApplicationStatus status) {
+create_existence_filter_mismatch_info_for_testing_hooks(
+    int local_cache_count,
+    const ExistenceFilterWatchChange& existence_filter,
+    const DatabaseId& database_id,
+    absl::optional<BloomFilter> bloom_filter,
+    BloomFilterApplicationStatus status) {
   absl::optional<TestingHooks::BloomFilterInfo> bloom_filter_info;
   if (existence_filter.filter().bloom_filter_parameters().has_value()) {
     const BloomFilterParameters& bloom_filter_parameters =
         existence_filter.filter().bloom_filter_parameters().value();
-    bloom_filter_info = {status == BloomFilterApplicationStatus::kSuccess, bloom_filter_parameters.hash_count, static_cast<int>(bloom_filter_parameters.bitmap.size()), bloom_filter_parameters.padding, std::move(bloom_filter)};
+    bloom_filter_info = {
+        status == BloomFilterApplicationStatus::kSuccess,
+        bloom_filter_parameters.hash_count,
+        static_cast<int>(bloom_filter_parameters.bitmap.size()),
+        bloom_filter_parameters.padding, std::move(bloom_filter)};
   }
 
-  return {local_cache_count, existence_filter.filter().count(), database_id.project_id(), database_id.database_id(), std::move(bloom_filter_info)};
+  return {local_cache_count, existence_filter.filter().count(),
+          database_id.project_id(), database_id.database_id(),
+          std::move(bloom_filter_info)};
 }
 
 }  // namespace
@@ -257,8 +268,13 @@ void WatchChangeAggregator::HandleExistenceFilter(
       int current_size = GetCurrentDocumentCountForTarget(target_id);
       if (current_size != expected_count) {
         // Apply bloom filter to identify and mark removed documents.
-        absl::optional<BloomFilter> bloom_filter = ParseBloomFilter(existence_filter);
-        BloomFilterApplicationStatus status = bloom_filter.has_value() ? ApplyBloomFilter(bloom_filter.value(), existence_filter, current_size) : BloomFilterApplicationStatus::kSkipped;
+        absl::optional<BloomFilter> bloom_filter =
+            ParseBloomFilter(existence_filter);
+        BloomFilterApplicationStatus status =
+            bloom_filter.has_value()
+                ? ApplyBloomFilter(bloom_filter.value(), existence_filter,
+                                   current_size)
+                : BloomFilterApplicationStatus::kSkipped;
         if (status != BloomFilterApplicationStatus::kSuccess) {
           // If bloom filter application fails, we reset the mapping and
           // trigger re-run of the query.
@@ -270,7 +286,11 @@ void WatchChangeAggregator::HandleExistenceFilter(
           pending_target_resets_.insert({target_id, purpose});
         }
 
-        TestingHooks::GetInstance().NotifyOnExistenceFilterMismatch(create_existence_filter_mismatch_info_for_testing_hooks(current_size, existence_filter, target_metadata_provider_->GetDatabaseId(), std::move(bloom_filter), status));
+        TestingHooks::GetInstance().NotifyOnExistenceFilterMismatch(
+            create_existence_filter_mismatch_info_for_testing_hooks(
+                current_size, existence_filter,
+                target_metadata_provider_->GetDatabaseId(),
+                std::move(bloom_filter), status));
       }
     }
   }
@@ -303,13 +323,18 @@ absl::optional<BloomFilter> WatchChangeAggregator::ParseBloomFilter(
   return bloom_filter;
 }
 
-BloomFilterApplicationStatus WatchChangeAggregator::ApplyBloomFilter(const BloomFilter& bloom_filter, const ExistenceFilterWatchChange& existence_filter, int current_count) {
+BloomFilterApplicationStatus WatchChangeAggregator::ApplyBloomFilter(
+    const BloomFilter& bloom_filter,
+    const ExistenceFilterWatchChange& existence_filter,
+    int current_count) {
   int expected_count = existence_filter.filter().count();
 
   int removed_document_count =
       FilterRemovedDocuments(bloom_filter, existence_filter.target_id());
 
-  return (expected_count == (current_count - removed_document_count)) ? BloomFilterApplicationStatus::kSuccess : BloomFilterApplicationStatus::kFalsePositive;
+  return (expected_count == (current_count - removed_document_count))
+             ? BloomFilterApplicationStatus::kSuccess
+             : BloomFilterApplicationStatus::kFalsePositive;
 }
 
 int WatchChangeAggregator::FilterRemovedDocuments(

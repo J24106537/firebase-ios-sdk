@@ -20,6 +20,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>  // NOLINT(build/c++11)
+#include <string>
 #include <unordered_map>
 
 #include "Firestore/core/src/api/listener_registration.h"

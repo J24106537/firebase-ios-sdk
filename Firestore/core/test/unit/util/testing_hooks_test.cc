@@ -60,9 +60,10 @@ using ExistenceFilterMismatchInfoAccumulator =
  * @return A new `ExistenceFilterMismatchInfo` object populated with sample
  * values based on the given `seed`. The object's `bloom_filter` member will
  * contain a `BloomFilterInfo` whose `bloom_filter` member will contain a
-* `BloomFilter`.
+ * `BloomFilter`.
  */
-TestingHooks::ExistenceFilterMismatchInfo SampleExistenceFilterMismatchInfo(int seed = 0) {
+TestingHooks::ExistenceFilterMismatchInfo SampleExistenceFilterMismatchInfo(
+    int seed = 0) {
   int local_cache_count = 123 + seed;
   int existence_filter_count = 456 + seed;
   std::string project_id = "test_project_id" + std::to_string(seed);
@@ -74,7 +75,12 @@ TestingHooks::ExistenceFilterMismatchInfo SampleExistenceFilterMismatchInfo(int 
   int bloom_filter_bitmap_length = static_cast<int>(bloom_filter_bytes.size());
   int bloom_filter_padding = (seed % 8);
 
-  return {local_cache_count, existence_filter_count, project_id, database_id, TestingHooks::BloomFilterInfo{ bloom_filter_applied, bloom_filter_hash_count, bloom_filter_bitmap_length, bloom_filter_padding, BloomFilter(ByteString(bloom_filter_bytes), bloom_filter_padding, bloom_filter_hash_count)}};
+  return {local_cache_count, existence_filter_count, project_id, database_id,
+          TestingHooks::BloomFilterInfo{
+              bloom_filter_applied, bloom_filter_hash_count,
+              bloom_filter_bitmap_length, bloom_filter_padding,
+              BloomFilter(ByteString(bloom_filter_bytes), bloom_filter_padding,
+                          bloom_filter_hash_count)}};
 }
 
 class TestingHooksTest : public ::testing::Test, public AsyncTest {
@@ -103,9 +109,12 @@ class TestingHooksTest : public ::testing::Test, public AsyncTest {
       EXPECT_EQ(info_bloom_filter.bitmap_length,
                 expected_bloom_filter.bitmap_length);
       EXPECT_EQ(info_bloom_filter.padding, expected_bloom_filter.padding);
-      EXPECT_EQ(info_bloom_filter.bloom_filter.has_value(), expected_bloom_filter.bloom_filter.has_value());
-      if (info_bloom_filter.bloom_filter.has_value() && expected_bloom_filter.bloom_filter.has_value()) {
-        EXPECT_EQ(info_bloom_filter.bloom_filter.value(), expected_bloom_filter.bloom_filter.value());
+      EXPECT_EQ(info_bloom_filter.bloom_filter.has_value(),
+                expected_bloom_filter.bloom_filter.has_value());
+      if (info_bloom_filter.bloom_filter.has_value() &&
+          expected_bloom_filter.bloom_filter.has_value()) {
+        EXPECT_EQ(info_bloom_filter.bloom_filter.value(),
+                  expected_bloom_filter.bloom_filter.value());
       }
     }
   }
@@ -136,13 +145,17 @@ TEST_F(TestingHooksTest, OnExistenceFilterMismatchCallbackShouldGetNotified) {
   AssertAccumulatedObject(accumulator, SampleExistenceFilterMismatchInfo());
 }
 
-TEST_F(TestingHooksTest, OnExistenceFilterMismatchCallbackShouldGetNotifiedWithAbsentExistenceFilterInfo) {
+TEST_F(
+    TestingHooksTest,
+    // NOLINTNEXTLINE(whitespace/line_length)
+    OnExistenceFilterMismatchCallbackShouldGetNotifiedWithAbsentExistenceFilterInfo) {
   auto accumulator = ExistenceFilterMismatchInfoAccumulator::NewInstance();
   std::shared_ptr<ListenerRegistration> listener_registration =
       TestingHooks::GetInstance().OnExistenceFilterMismatch(
           accumulator->AsCallback());
   Defer unregister_listener([=] { listener_registration->Remove(); });
-  TestingHooks::ExistenceFilterMismatchInfo existence_filter_mismatch_info = SampleExistenceFilterMismatchInfo();
+  TestingHooks::ExistenceFilterMismatchInfo existence_filter_mismatch_info =
+      SampleExistenceFilterMismatchInfo();
   existence_filter_mismatch_info.bloom_filter = absl::nullopt;
 
   NotifyOnExistenceFilterMismatchAsync(existence_filter_mismatch_info);
@@ -150,13 +163,17 @@ TEST_F(TestingHooksTest, OnExistenceFilterMismatchCallbackShouldGetNotifiedWithA
   AssertAccumulatedObject(accumulator, existence_filter_mismatch_info);
 }
 
-TEST_F(TestingHooksTest, OnExistenceFilterMismatchCallbackShouldGetNotifiedWithAbsentExistenceFilter) {
+TEST_F(
+    TestingHooksTest,
+    // NOLINTNEXTLINE(whitespace/line_length)
+    OnExistenceFilterMismatchCallbackShouldGetNotifiedWithAbsentExistenceFilter) {
   auto accumulator = ExistenceFilterMismatchInfoAccumulator::NewInstance();
   std::shared_ptr<ListenerRegistration> listener_registration =
       TestingHooks::GetInstance().OnExistenceFilterMismatch(
           accumulator->AsCallback());
   Defer unregister_listener([=] { listener_registration->Remove(); });
-  TestingHooks::ExistenceFilterMismatchInfo existence_filter_mismatch_info = SampleExistenceFilterMismatchInfo();
+  TestingHooks::ExistenceFilterMismatchInfo existence_filter_mismatch_info =
+      SampleExistenceFilterMismatchInfo();
   existence_filter_mismatch_info.bloom_filter->bloom_filter = absl::nullopt;
 
   NotifyOnExistenceFilterMismatchAsync(existence_filter_mismatch_info);
