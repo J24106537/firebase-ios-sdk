@@ -779,12 +779,7 @@
                                                         withString:collectionGroup];
     [batch setData:@{@"x" : @1} forDocument:[self.db documentWithPath:path]];
   }
-  XCTestExpectation *expectation = [self expectationWithDescription:@"batch written"];
-  [batch commitWithCompletion:^(NSError *error) {
-    XCTAssertNil(error);
-    [expectation fulfill];
-  }];
-  [self awaitExpectations];
+  [self commitWriteBatch:batch];
 
   FIRQuerySnapshot *querySnapshot =
       [self readDocumentSetForRef:[self.db collectionGroupWithID:collectionGroup]];
@@ -810,12 +805,7 @@
                                                         withString:collectionGroup];
     [batch setData:@{@"x" : @1} forDocument:[self.db documentWithPath:path]];
   }
-  XCTestExpectation *expectation = [self expectationWithDescription:@"batch written"];
-  [batch commitWithCompletion:^(NSError *error) {
-    XCTAssertNil(error);
-    [expectation fulfill];
-  }];
-  [self awaitExpectations];
+  [self commitWriteBatch:batch];
 
   FIRQuerySnapshot *querySnapshot = [self
       readDocumentSetForRef:[[[[self.db collectionGroupWithID:collectionGroup]
@@ -847,12 +837,7 @@
                                                         withString:collectionGroup];
     [batch setData:@{@"x" : @1} forDocument:[self.db documentWithPath:path]];
   }
-  XCTestExpectation *expectation = [self expectationWithDescription:@"batch written"];
-  [batch commitWithCompletion:^(NSError *error) {
-    XCTAssertNil(error);
-    [expectation fulfill];
-  }];
-  [self awaitExpectations];
+  [self commitWriteBatch:batch];
 
   FIRQuerySnapshot *querySnapshot = [self
       readDocumentSetForRef:[[[self.db collectionGroupWithID:collectionGroup]
@@ -1227,19 +1212,11 @@
       NSMutableArray<NSString *> *deletedDocumentIdsAccumulator = [[NSMutableArray alloc] init];
       for (decltype(createdDocuments.count) i = 0; i < createdDocuments.count; i += 2) {
         FIRDocumentReference *documentToDelete = [db2 documentWithPath:createdDocuments[i].path];
-        ;
         [batch deleteDocument:documentToDelete];
         [deletedDocumentIdsAccumulator addObject:documentToDelete.documentID];
       }
 
-      XCTestExpectation *commitExpectation = [self expectationWithDescription:@"WriteBatch commit"];
-      [batch commitWithCompletion:^(NSError *_Nullable error) {
-        [commitExpectation fulfill];
-        if (error != nil) {
-          XCTFail(@"WriteBatch commit failed: %@", error);
-        }
-      }];
-      [self awaitExpectation:commitExpectation];
+      [self commitWriteBatch:batch];
 
       deletedDocumentIds = [NSSet setWithArray:deletedDocumentIdsAccumulator];
     }
