@@ -151,6 +151,15 @@ NSArray<NSArray<id> *> *FIRQuerySnapshotGetDocChangesData(FIRQuerySnapshot *docs
 /** Gets the FIRDocumentReference objects from a FIRQuerySnapshot and returns them. */
 NSArray<FIRDocumentReference *> *FIRDocumentReferenceArrayFromQuerySnapshot(FIRQuerySnapshot *);
 
+/** Asserts that the given FIRQuerySnapshot contains exactly the documents with the given IDs */
+#define FIRAssertQuerySnapshotContains(snapshot, expectedDocumentIds) \
+  FIRAssertQuerySnapshotContains_(snapshot, expectedDocumentIds, __FILE__, __LINE__);
+
+void FIRAssertQuerySnapshotContains_(FIRQuerySnapshot *snapshot,
+                                     NSArray<NSString *> *expectedDocumentIds,
+                                     const char *file,
+                                     int line);
+
 #if __cplusplus
 }  // extern "C"
 #endif
